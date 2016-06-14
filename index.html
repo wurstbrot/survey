@@ -1,0 +1,213 @@
+<HTML>
+
+<HEAD>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Barchart with Box Plot (uncertainty)</title>
+    <link rel="icon" href="https://avatars3.githubusercontent.com/u/6544448?s=460" type="image/png">
+
+    <link rel="stylesheet" type="text/css" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="d3.js"></script>
+    <script type="text/javascript" src="handlebars-v4.0.5.js"></script>
+    <script type="text/javascript" src="bib.js"></script>
+    <script type="text/javascript" src="barchartWithBoxPlot.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/u/bs/dt-1.10.12/datatables.min.css"/>
+
+    <script type="text/javascript" src="https://cdn.datatables.net/u/bs/dt-1.10.12/datatables.min.js"></script>
+
+
+    <style type="text/css">
+        .barchartWitBoxPlot .axis text {
+            fill: #525252;
+            font: 13px "Futura", sans-serif;
+        }
+
+        .barchartWitBoxPlot .axis path, .axis line {
+            fill: none;
+            shape-rendering: crispedges;
+            stroke: #dddddd;
+        }
+
+        .barchartWitBoxPlot rect {
+            cursor: pointer;
+        }
+    </style>
+</HEAD>
+
+<BODY>
+<h1>Ergebnisse der Umfrage "Identifizierung von gemeinsamen Zielen der Bereiche Anwendungs-Entwicklung, IT-Betrieb und IT-Sicherheit"</h1>
+<div class="container-fluid">
+    <BR/>
+
+    <div class="">
+        <div id="containerBarchart"></div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    function extractQuestionAndProperty(name) {
+        var bracketsStart = name.indexOf("[");
+        var question = name.substr(0, bracketsStart - 1);
+        var property = name.substr(bracketsStart + 1, name.length - bracketsStart - 2);
+        return {'question': question, 'property': property};
+    }
+
+    function displayVariables(variables) {
+        $.each(variables, function (i, d) {
+            $("#containerVariables").append('<a id="' + d.name + '" class="btn btn-default variable" href="#" role="button">' + d.name + '</a>');
+        });
+
+        $(".variable").on("click", function () {
+            barchart.addOrRemoveToBarchart(this.id);
+        });
+    }
+
+    // Action on uncertainty button
+    $("#buttonUncertainty").on("click", function (d) {
+        barchart.changeDisplayUncertainty();
+        barchart.update();
+    });
+
+    var barchart;
+
+
+    d3.csv("survey_results.csv", function (data) {
+        var dataWithCount = {};
+        for (var key in data[0]) {
+            if (key == "Antwort ID") continue;
+
+            var questonAndProperty = extractQuestionAndProperty(key);
+            if (questonAndProperty.question == "") continue;
+
+
+            for (var i in data) {
+                if(data[i]["Datum Abgeschickt"] == "" || typeof data[i]["Datum Abgeschickt"] == "undefined") {
+                    continue;
+                }
+                /*
+                var filterQuestion = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen? [IT-Sicherheit]";
+                var filterQuestionShort = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen?";
+                var filterAnswer = data[i][filterQuestion];
+                var answerOptionsFlipped = array_flip(answerOptions[filterQuestionShort]);
+                if (answerOptionsFlipped[filterAnswer] < 3) {
+                    continue;
+                }
+                */
+
+                var answer = data[i][key];
+                if (answer == "") {
+                    answer = "Keine Antwort"
+                }
+
+                if (typeof answerOptions[questonAndProperty['question']] == "undefined") {
+                    continue;
+                }
+
+
+                if (typeof dataWithCount[questonAndProperty['question']] == "undefined") {
+                    dataWithCount[questonAndProperty['question']] = {}
+                }
+                if (typeof dataWithCount[questonAndProperty['question']][questonAndProperty['property']] == "undefined") {
+                    dataWithCount[questonAndProperty['question']][questonAndProperty['property']] = {}
+                    for (var preparedAnswer in answerOptions[questonAndProperty['question']]) {
+                        dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answerOptions[questonAndProperty['question']][preparedAnswer]] = 0;
+                    }
+                }
+                if (typeof dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] == "undefined") {
+                    //dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] = 0;
+                    console.log("err");
+                }
+
+                dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] = dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] + 1;
+            }
+        }
+        var q = new Array();
+
+        for (var question in dataWithCount) {
+            var dataWithPreparedValues = new Array();
+
+            var questionData = dataWithCount[question];
+            for (var property in questionData) {
+                var dataWithPreparedValue = {};
+                var answers = questionData[property];
+
+
+                for (var i in answerOptions[question]) {
+                    dataWithPreparedValue[answerOptions[question][i]] = {
+                        value: 0
+                       // , uncertainty: standardDeviationForData(answers)
+                    };
+                }
+
+                dataWithPreparedValue['Name'] = property;
+
+
+                for (var answerKey in answers) {
+                    var key = answerKey;
+                    if (answerKey == "") {
+                        key = "Keine Antwort"
+                    }
+
+                    dataWithPreparedValue[key]['value'] = answers[answerKey];
+                }
+                dataWithPreparedValues.push(dataWithPreparedValue);
+            }
+            var id = "containerBarchart" + chartCounter++;
+            $("body").append("<h2>" + question + "</h2><div id='" + id + "'></div>");
+            barchart = barchartWithBoxPlot("#" + id, 1000, 500, dataWithPreparedValues);
+            var allVariables = barchart.getDisplayedVariables();
+            barchart.setKeyXAxe("Name");
+            barchart.create();
+            displayVariables(allVariables);
+            displayTable(dataWithCount[question]);
+        }
+    })
+</script>
+
+<script id="tableTemplate" type="text/x-handlebars-template">
+
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Antwort</th>
+            {{#each data}}
+            {{#if @first}}
+            {{#each this as | answerCount answerType |}}
+            <th data-sortable="true">
+                {{answerType}}
+            </th>
+            {{/each}}
+            {{/if}}
+            {{/each}}
+            <th data-defaultsort="desc">Wertigkeit</th>
+            <th data-defaultsort="desc">Durchschnitt &plusmn; Standardabweichung</th>
+        </tr>
+        </thead>
+        {{#each data as | p property|}}
+        <tr>
+            {{#each this as | answerCount answerType |}}
+            {{#if @first}}
+            <td>{{property}}</td>
+            {{/if}}
+
+            <td>{{answerCount.value}} ({{answerCount.percentage}}%)</td>
+            {{#if @last}}
+            <td data-value="{{answerCount.dataValue}}">{{answerCount.dataValue}}</td>
+            <td data-value="{{answerCount.avg}}">{{answerCount.avg}}  &plusmn; {{answerCount.standardDeviation}}</td>
+            {{/if}}
+            {{/each}}
+        </tr>
+        {{/each}}
+    </table>
+
+</script>
+
+</BODY>
+</HTML>
+

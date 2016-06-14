@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html>
+
+
+<head>
+
+    <script data-require="jquery@2.0.3" data-semver="2.0.3" src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+
+    <script data-require="d3@2.10.0" data-semver="2.10.0"
+            src="//cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.js"></script>
+
+    <link rel="stylesheet" href="style.css"/>
+    <style>
+        h2 {
+
+            font-size: .8em;
+
+            margin-left: 10px;
+
+        }
+
+        .chart {
+
+            background: #b0e0f8;
+
+            margin: 5px;
+
+        }
+
+        .chart rect {
+
+            stroke: white;
+
+            fill: steelblue;
+
+        }
+
+        .chart text {
+
+            fill: white;
+
+        }
+
+        .chart text.name {
+
+            fill: #000;
+
+        }
+
+        .chart line {
+
+            stroke: #c1c1c1;
+
+        }
+
+        .chart .rule {
+
+            fill: #000;
+
+        }
+
+        /* removed the while stroke as we don't need it anymore */
+
+        #step-5 .chart rect {
+
+            stroke: none;
+
+        }
+
+        /* a bit of hovering effect for each bar */
+
+        #step-5 .chart rect:hover {
+
+            fill: #64707D;
+
+        }
+
+
+    </style>
+</head>
+
+
+<body>
+
+<h2>Step 1</h2>
+
+<div id="step-1"></div>
+
+
+<h2>Step 2</h2>
+
+<div id="step-2"></div>
+
+
+<h2>Step 3</h2>
+
+<div id="step-3"></div>
+
+
+<h2>Step 4</h2>
+
+<div id="step-4"></div>
+
+
+<h2>Step 5</h2>
+
+<div id="step-5"></div>
+
+<script src="bargraph.js"></script>
+
+</body>
+
+
+</html>
+
+
+
+
+
