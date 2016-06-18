@@ -38,7 +38,9 @@
 </HEAD>
 
 <BODY>
-<h1>Ergebnisse der Umfrage "Identifizierung von gemeinsamen Zielen der Bereiche Anwendungs-Entwicklung, IT-Betrieb und IT-Sicherheit"</h1>
+<h1 id="head-description">Ergebnisse der Umfrage "Identifizierung von gemeinsamen Zielen der Bereiche
+    Anwendungs-Entwicklung, IT-Betrieb und
+    IT-Sicherheit"</h1>
 <div class="container-fluid">
     <BR/>
 
@@ -81,51 +83,52 @@
         for (var key in data[0]) {
             if (key == "Antwort ID") continue;
 
-            var questonAndProperty = extractQuestionAndProperty(key);
-            if (questonAndProperty.question == "") continue;
-
+            var questionAndProperty = extractQuestionAndProperty(key);
+            if (questionAndProperty.question == "") continue;
 
             for (var i in data) {
-                if(data[i]["Datum Abgeschickt"] == "" || typeof data[i]["Datum Abgeschickt"] == "undefined") {
+                if (data[i]["Datum Abgeschickt"] == "" || typeof data[i]["Datum Abgeschickt"] == "undefined") {
                     continue;
                 }
-                /*
-                var filterQuestion = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen? [IT-Sicherheit]";
-                var filterQuestionShort = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen?";
-                var filterAnswer = data[i][filterQuestion];
-                var answerOptionsFlipped = array_flip(answerOptions[filterQuestionShort]);
-                if (answerOptionsFlipped[filterAnswer] < 3) {
-                    continue;
+
+                if (typeof urlParams['filter'] != "undefined") {
+                    var filterQuestion = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen? " + "[" + urlParams['filter'] + "]";
+                    var filterQuestionShort = "Über wie viel Wissen verfügen Sie in den folgenden Bereichen?";
+                    var filterAnswer = data[i][filterQuestion];
+                    var answerOptionsFlipped = array_flip(answerOptions[filterQuestionShort]);
+                    if (answerOptionsFlipped[filterAnswer] != parseInt(urlParams['filterAnswer'])) {
+                        continue;
+                    }
                 }
-                */
 
                 var answer = data[i][key];
                 if (answer == "") {
                     answer = "Keine Antwort"
                 }
 
-                if (typeof answerOptions[questonAndProperty['question']] == "undefined") {
+                if (typeof answerOptions[questionAndProperty['question']] == "undefined") {
                     continue;
                 }
 
 
-                if (typeof dataWithCount[questonAndProperty['question']] == "undefined") {
-                    dataWithCount[questonAndProperty['question']] = {}
+                if (typeof dataWithCount[questionAndProperty['question']] == "undefined") {
+                    dataWithCount[questionAndProperty['question']] = {}
                 }
-                if (typeof dataWithCount[questonAndProperty['question']][questonAndProperty['property']] == "undefined") {
-                    dataWithCount[questonAndProperty['question']][questonAndProperty['property']] = {}
-                    for (var preparedAnswer in answerOptions[questonAndProperty['question']]) {
-                        dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answerOptions[questonAndProperty['question']][preparedAnswer]] = 0;
+                if (typeof dataWithCount[questionAndProperty['question']][questionAndProperty['property']] == "undefined") {
+                    dataWithCount[questionAndProperty['question']][questionAndProperty['property']] = {}
+                    for (var preparedAnswer in answerOptions[questionAndProperty['question']]) {
+                        dataWithCount[questionAndProperty['question']][questionAndProperty['property']][answerOptions[questionAndProperty['question']][preparedAnswer]] = 0;
                     }
                 }
-                if (typeof dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] == "undefined") {
+                if (typeof dataWithCount[questionAndProperty['question']][questionAndProperty['property']][answer] == "undefined") {
                     //dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] = 0;
                     console.log("err");
                 }
 
-                dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] = dataWithCount[questonAndProperty['question']][questonAndProperty['property']][answer] + 1;
+                dataWithCount[questionAndProperty['question']][questionAndProperty['property']][answer] = dataWithCount[questionAndProperty['question']][questionAndProperty['property']][answer] + 1;
             }
         }
+
         var q = new Array();
 
         for (var question in dataWithCount) {
@@ -140,7 +143,7 @@
                 for (var i in answerOptions[question]) {
                     dataWithPreparedValue[answerOptions[question][i]] = {
                         value: 0
-                       // , uncertainty: standardDeviationForData(answers)
+                        // , uncertainty: standardDeviationForData(answers)
                     };
                 }
 
@@ -157,14 +160,42 @@
                 }
                 dataWithPreparedValues.push(dataWithPreparedValue);
             }
+
+            //console.log("calculateAvgForYears", calculateAvgForYears(data));
             var id = "containerBarchart" + chartCounter++;
-            $("body").append("<h2>" + question + "</h2><div id='" + id + "'></div>");
-            barchart = barchartWithBoxPlot("#" + id, 1000, 500, dataWithPreparedValues);
+            $("body").append("<h2 id='"+b64EncodeUnicode(question)+"'>" + question + "</h2><div id='" + id + "'></div>");
+            barchart = barchartWithBoxPlot("#" + id, 1000, 300, dataWithPreparedValues);
             var allVariables = barchart.getDisplayedVariables();
             barchart.setKeyXAxe("Name");
             barchart.create();
             displayVariables(allVariables);
             displayTable(dataWithCount[question]);
+
+            if ($("#expert-filter").length == 0) {
+                $("#head-description").after("<div id='expert-filter'><h2>Experten-Filter</h2><div>Anschließend werden nur Daten angezeigt, in welchen das gewählte Wissen in dem gewählten Bereich vorhanden ist. </div></div>");
+                $("#expert-filter").after('<br /><a href="?">Kein Filter</a><br />');
+                for (var property in dataWithCount['Über wie viel Wissen verfügen Sie in den folgenden Bereichen?']) {
+                    for (var answerIndex in answerOptions['Über wie viel Wissen verfügen Sie in den folgenden Bereichen?']) {
+                        if(answerIndex >4) {
+                            continue;
+                        }
+                        var answer = answerOptions['Über wie viel Wissen verfügen Sie in den folgenden Bereichen?'][answerIndex];
+                        var link = '<a href="?filter=' + property + '&filterAnswer='+answerIndex+'">' + property + '('+answer+')</a> ';
+                        $("#expert-filter").after(link);
+                    }
+                    $("#expert-filter").after("<br />");
+
+                }
+
+                var links = "<h2>Übersicht</h2>";
+                for(var question in dataWithCount) {
+                     var link ='<a href="#' + b64EncodeUnicode(question) +'">' + question+'</a> <br />';
+                    links = links + link;
+
+                }
+
+                $("h1").after(links);
+            }
         }
     })
 </script>
@@ -176,6 +207,7 @@
         <thead>
         <tr>
             <th>Antwort</th>
+            <th data-defaultsort="desc">Durchschnitt &plusmn; Standardabweichung</th>
             {{#each data}}
             {{#if @first}}
             {{#each this as | answerCount answerType |}}
@@ -185,8 +217,7 @@
             {{/each}}
             {{/if}}
             {{/each}}
-            <th data-defaultsort="desc">Wertigkeit</th>
-            <th data-defaultsort="desc">Durchschnitt &plusmn; Standardabweichung</th>
+
         </tr>
         </thead>
         {{#each data as | p property|}}
@@ -194,13 +225,9 @@
             {{#each this as | answerCount answerType |}}
             {{#if @first}}
             <td>{{property}}</td>
+            <td data-value="{{answerCount.avg}}">{{answerCount.avg}} &plusmn; {{answerCount.standardDeviation}}</td>
             {{/if}}
-
             <td>{{answerCount.value}} ({{answerCount.percentage}}%)</td>
-            {{#if @last}}
-            <td data-value="{{answerCount.dataValue}}">{{answerCount.dataValue}}</td>
-            <td data-value="{{answerCount.avg}}">{{answerCount.avg}}  &plusmn; {{answerCount.standardDeviation}}</td>
-            {{/if}}
             {{/each}}
         </tr>
         {{/each}}

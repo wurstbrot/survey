@@ -78,15 +78,17 @@ function averageForData(data) {
 }
 function calculateAvgForYears(data) {
     var values = new Array();
-    var totalAvg = 0;
+    var total = 0;
     for (var key in data) {
         var years = data[key]["Über wie viele Jahre Berufserfahrung verfügen Sie?"];
         if (isNaN(years)) {
             years = 0;
         }
-        values.push(years);
+        values.push(parseInt(years));
+        total = total + parseInt(years);
     }
-    return "X";
+    console.log("std", standardDeviation(values));
+    return (total / values.length);
 
 }
 
@@ -163,4 +165,22 @@ function array_flip( trans )
     }
 
     return tmp_ar;
+}
+
+var urlParams;
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
+
+    urlParams = {};
+    while (match = search.exec(query))
+        urlParams[decode(match[1])] = decode(match[2]);
+})();
+function b64EncodeUnicode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
 }
